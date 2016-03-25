@@ -1,51 +1,53 @@
 'use strict';
+let Ghost = require(__dirname + '/../models/ghost-model');
+let Powers = require(__dirname + '/../models/powers-model');
 
 module.exports = (router) => {
+  let decode = require('../lib/auth');
 
-  let Ghost = require(__dirname + '/../models/ghost-model');
-  let Powers = require(__dirname + '/../models/powers-model');
+  router.use(decode);
+  router.use('/ghosts/:id', (req, res, next) => {
+    if (req.decodedToken.id !== req.params.id) {
+      res.write('DENIED');
+      return res.end();
+    }
+    next();
+  });
 
   router.route('/ghosts')
     .get((req, res) => {
       Ghost.find({})
         .populate('powers')
+        .populate('haunting')
         .exec((err, ghosts) => {
           res.json(ghosts);
           res.end();
         });
-    })
-      .post((req, res) => {
-        var newPowers = new Powers(req.body.powers);
-        newPowers.save((err) => {
-          if (err) res.send('powers not recieved yo');
-          var newGhost = new Ghost({
-            name: req.body.name,
-            isEvil: req.body.isEvil,
-            numEyes: req.body.numEyes,
-            powers: newPowers._id
-          });
-          newGhost.save((err, ghost) => {
-            res.json(ghost);
-            res.end();
-          });
-        });
-      });
+    });
 
   router.route('/ghosts/:id')
   .get((req, res) => {
     Ghost
     .findOne({_id: req.params.id})
     .populate('powers')
+    .populate('haunting')
     .exec((err, ghost) => {
       res.json(ghost);
       res.end();
     });
   })
     .put((req, res) => {
+      console.log(Object.keys(req.body.ghost));
       Ghost.findByIdAndUpdate(req.params.id,{ $set: req.body.ghost }, (err, ghost) => {
-        if (err) res.end(err);
+        if (err) {
+          console.log(err);
+          return res.end();
+        }
         Powers.findByIdAndUpdate(ghost.powers, { $set: req.body.powers}, (err) =>{
-          if (err) res.send(err);
+          if (err) {
+            console.log(err);
+            return res.end();
+          }
           console.log('powers stored');
         });
         res.write('Ghost updated!');

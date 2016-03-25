@@ -3,7 +3,7 @@
 var gulp = require('gulp');
 var eslint = require('gulp-eslint');
 var mocha = require('gulp-mocha');
-var paths = ['*.js', 'test/test.js', 'routes/*.js', 'models/*.js'];
+var paths = ['*.js', 'test/*.js', 'routes/*.js', 'models/*.js'];
 
 gulp.task('default', ['watch']);
 

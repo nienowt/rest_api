@@ -2,11 +2,16 @@
 
 module.exports = (router) => {
   let Human = require(__dirname + '/../models/human-model');
+  let Ghost = require(__dirname + '/../models/ghost-model');
+  let decode = require('../lib/auth');
 
+  router.use(decode);
   router.route('/humans')
     .get((req, res) => {
-      Human.find({}, (err, humans) => {
-        res.json({humans});
+      Human.find({})
+      .populate('hauntedBy')
+      .exec((err, humans) => {
+        res.json(humans);
         res.end();
       });
     })
@@ -20,7 +25,12 @@ module.exports = (router) => {
 
   router.route('/humans/:id')
   .get((req, res) => {
-    Human.findById(req.params.id, (err, human) => {
+    Human.findByIdAndUpdate(req.params.id, {$push: {'hauntedBy':req.decodedToken.id}}, (err, human) => {
+      if (err) console.log(err);
+
+      Ghost.findByIdAndUpdate(req.decodedToken.id, {$push: {'haunting': human._id}}, (err) => {
+        if (err) console.log(err);
+      });
       res.json(human);
       res.end();
     });
